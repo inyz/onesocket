@@ -1,0 +1,7 @@
+bin/
+obj/
+gopher.exe
+env.bat
+.env
+out
+.vs
