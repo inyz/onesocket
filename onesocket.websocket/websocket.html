@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+  <meta http-equiv="content-type" content="txt/html; charset=utf-8" />
+  <title>c#后端WebSocket的Tomcat实现</title>
+  <style>
+
+
+  </style>
+</head>
+
+<body>
+
+  <div>
+    Welcome<br /><input id="text" type="text" />
+    <button onclick="send()">发送消息</button>
+    <span>需要先注册用户，注册命令：name:小李 &nbsp;&nbsp;&nbsp;针对某人发消息命令：@小李 你好啊现在在干嘛呢</span>
+    <span>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;服务器：
+    </span><input id="serverport" value="127.0.0.1:6789" />
+    &nbsp;&nbsp;&nbsp;<button id="reset">重置ip和prot</button>
+  </div>
+
+  <br />
+  <div style="border:1px solid #17acf8;height:500px;padding:3px;font-">
+    <div class="div1" id="userrlist" style="overflow-y:scroll;height:500px;float:left; width:20%;">
+      用户列表，登录后可查看
+
+    </div>
+
+
+    <div class="div2" style="overflow-y:hidden;height:500px;float:left;width:2%; ">
+
+    </div>
+    <div class="div2" id="message" style="overflow-y:scroll;height:500px;float:left;width:78%; ">
+      消息：<br />
+    </div>
+  </div>
+</body>
+
+<script type="text/javascript">
+  var websocket = null;
+  //发送消息
+  function send() {
+    var message = document.getElementById('text').value;
+    if (message.lastIndexOf("@") > -1) {
+      for (var i = 0; i < 1; i++) {
+        websocket.send(message);
+      }
+    } else {
+      websocket.send(message);
+    }
+
+
+  }
+  document.onkeyup = function (e) {//按键信息对象以函数参数的形式传递进来了，就是那个e  
+    var code = e.charCode || e.keyCode;  //取出按键信息中的按键代码(大部分浏览器通过keyCode属性获取按键代码，但少部分浏览器使用的却是charCode)  
+    if (code == 13) {
+      send();
+    }
+  }
+  function reload() {
+
+
+    var ipport = document.getElementById("serverport").value;
+
+
+    //判断当前浏览器是否支持WebSocket
+    if ('WebSocket' in window) {
+      websocket = new WebSocket("ws://" + ipport);
+    }
+    else {
+      alert('当前浏览器 Not support websocket')
+    }
+
+    //连接发生错误的回调方法
+    websocket.onerror = function () {
+      setMessageInnerHTML("WebSocket连接发生错误");
+    };
+
+    //连接成功建立的回调方法
+    websocket.onopen = function () {
+      setMessageInnerHTML("WebSocket连接成功");
+    }
+
+    //接收到消息的回调方法
+    websocket.onmessage = function (event) {
+      var temp = event.data.split(',');
+      if (temp[0] == "userlist") {
+        var str = "用户列表:<br/>";
+        for (var i = 1; i < temp.length; i++) {
+          str = str + temp[i] + '<br/>';
+
+        }
+        document.getElementById('userrlist').innerHTML = str;
+      }
+      else {
+        console.log(event.data);
+        // document.getElementById('message').innerHTML = event.data;
+        setMessageInnerHTML(event.data);
+      }
+    }
+
+    //连接关闭的回调方法
+    websocket.onclose = function () {
+      setMessageInnerHTML("WebSocket连接关闭");
+    }
+
+    //监听窗口关闭事件，当窗口关闭时，主动去关闭websocket连接，防止连接还没断开就关闭窗口，server端会抛异常。
+    window.onbeforeunload = function () {
+      closeWebSocket();
+    }
+
+    //将消息显示在网页上
+    function setMessageInnerHTML(innerHTML) {
+      document.getElementById('message').innerHTML += innerHTML + '<br/>';
+
+
+      var div = document.getElementById('message');
+
+      div.scrollTop = div.scrollHeight;
+    }
+
+    //关闭WebSocket连接
+    function closeWebSocket() {
+      websocket.close();
+    }
+
+
+  }
+  var reset = document.getElementById("reset");
+  reset.onclick = function () {
+    reload();
+  }
+  reload();
+</script>
+
+</html>
